@@ -1,4 +1,8 @@
 
+# LacCore/CSDCO
+# qtmain_geotek.py
+# PyQt GUI wrapper of Geotek processing logic
+
 import logging
 import os
 import sys

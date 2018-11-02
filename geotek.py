@@ -1,5 +1,5 @@
-# 10/27/2018
 # LacCore/CSDCO
+# geotek.py
 #
 # Prepare a raw vertically-oriented Geotek core scanner TIFF image
 # for use by doing the following:
@@ -85,8 +85,3 @@ def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, de
     scaled_dims = (int(round(icd_img.width * scaling)), int(round(icd_img.height * scaling)))   
     icd_img = icd_img.resize(scaled_dims)
     icd_img.save(os.path.join(destPath, IcdDir, outputBaseName + ".jpg"))
-
-
-if __name__ == "__main__":
-    prepare_geotek("OGDP-OLD14-2A-15Y-1-A.tif", "Geotek20ppmmRulerGrayscale.jpg", 508, 30, "OGDP-OLD14-2A-15Y-1-A", "/Users/bgrivna/Desktop/converter_out")
-    print("All done.")
