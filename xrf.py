@@ -1,5 +1,5 @@
-# 10/27/2018
 # LacCore/CSDCO
+# xrf.py
 #
 # Prepare a raw XRF radiograph TIFF by doing the following:
 # 1. Increase contrast by finding the range of colors in the source image,
@@ -19,7 +19,19 @@
 import os
 from PIL import Image
 
-from common import prep_dirs
+from common import create_dirs
+
+ProgressListener = None
+
+def setProgressListener(pl):
+    global ProgressListener
+    ProgressListener = pl
+    ProgressListener.clear()
+
+def reportProgress(value, text):
+    global ProgressListener
+    if ProgressListener:
+        ProgressListener.setValueAndText(value, text)
 
 class ContrastAdjuster:
     def __init__(self, minv, maxv, gamma, pixeldepth):
@@ -50,22 +62,22 @@ def adjust_contrast(img, gamma):
     adj_img.putdata([(v,v,v) for v in adj_pix])
     return adj_img
 
-# adjust contrast, rotate, and add ruler to imgPath, saving to destDir
-# with name [imgPath filename] + [optional suffix e.g. "_adj"] + ".jpg"
-def prepare_xrf(imgPath, rulerPath, gamma, destDir, suffix=""):
+# adjust contrast, rotate, add ruler to imgPath, save to destDir
+def prepare_xrf(imgPath, rulerPath, gamma, outputBaseName, destDir):
+    baseProgStr = "Processing {}...".format(imgPath)
+    reportProgress(0, baseProgStr)
+    RadiographDir = 'radiograph'
+    create_dirs(destDir, [RadiographDir])
+
     img = Image.open(imgPath)
+    reportProgress(25, baseProgStr + "adjusting levels")
     adj_img = adjust_contrast(img, gamma)
     adj_img = adj_img.rotate(180)
     ruler_img = Image.open(rulerPath)
+    reportProgress(50, baseProgStr + "adding ruler")
     dest_img = Image.new("RGB", (adj_img.width, adj_img.height + ruler_img.height))
     dest_img.paste(adj_img)
     dest_img.paste(ruler_img, (0, adj_img.height))
-    fname, _ = os.path.splitext(imgPath)
-    destPath = os.path.join(destDir, os.path.basename(fname + suffix + ".jpg"))
+    reportProgress(75, baseProgStr + "writing to JPEG")
+    destPath = os.path.join(destDir, RadiographDir, outputBaseName + ".jpg")
     dest_img.save(destPath)
-
-
-
-if __name__ == "__main__":
-    prepare_geotek("OGDP-OLD14-2A-15Y-1-A.tif", "Geotek20ppmmRulerGrayscale.jpg", 508, 30, "OGDP-OLD14-2A-15Y-1-A", "/Users/bgrivna/Desktop/converter_out")
-    print("All done.")
