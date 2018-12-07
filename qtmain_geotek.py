@@ -59,6 +59,14 @@ class MainWindow(QtWidgets.QDialog):
         rulerLayout.addWidget(self.rulerCombo)
         vlayout.addLayout(rulerLayout, 0)
 
+        outputNamingLayout = QtWidgets.QHBoxLayout()
+        self.outputNamingCombo = QtWidgets.QComboBox()
+        self.outputNamingCombo.addItems(["Use input file's name", "Use name of input file's parent directory"])
+        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.outputNamingCombo.sizePolicy().verticalPolicy())
+        outputNamingLayout.addWidget(QtWidgets.QLabel("Output Naming:"))
+        outputNamingLayout.addWidget(self.outputNamingCombo)
+        vlayout.addLayout(outputNamingLayout)
+
         self.saveDefaultsButton = QtWidgets.QPushButton("Save Settings as Default")
         self.saveDefaultsButton.clicked.connect(self.saveDefaultSettings)
         self.saveDefaultsButton.setAutoDefault(False)
@@ -110,6 +118,8 @@ class MainWindow(QtWidgets.QDialog):
         self.dpi.setText(self.prefs.get("dpi", "508"))
         self.trim.setText(self.prefs.get("trim", "0.25"))
         self.icdScaling.setText(self.prefs.get("icdScaling", "30"))
+        # default to input file name
+        self.outputNamingCombo.setCurrentIndex(self.prefs.get("outputNaming", 0))
 
     def savePrefs(self):
         self.prefs.set("windowGeometry", self.geometry())
@@ -119,6 +129,7 @@ class MainWindow(QtWidgets.QDialog):
         self.prefs.set("dpi", self.dpi.text())
         self.prefs.set("trim", self.trim.text())
         self.prefs.set("icdScaling", self.icdScaling.text())
+        self.prefs.set("outputNaming", self.outputNamingCombo.currentIndex())
 
     # override QWidget.closeEvent()
     def closeEvent(self, event):
@@ -142,7 +153,7 @@ class MainWindow(QtWidgets.QDialog):
             dpi = float(self.dpi.text())
             trim = float(self.trim.text())
             icdScaling = float(self.icdScaling.text())
-            parentDirBasename = True
+            parentDirBasename = self.outputNamingCombo.currentIndex() == 1
             for imgPath in imgFiles:
                 if parentDirBasename:
                     outputBaseName = os.path.basename(os.path.dirname(os.path.normpath(imgPath)))
@@ -169,5 +180,3 @@ if __name__ == '__main__':
     window.setModal(False)
     window.show()
     sys.exit(app.exec_())
-    
-    
