@@ -1,16 +1,12 @@
-
 # LacCore/CSDCO
 # qtmain_geotek.py
 # PyQt GUI wrapper of Geotek processing logic
 
-import logging
-import os
-import sys
-import time
-import traceback
+import logging, os, re, sys, time, traceback
 
-from PyQt5 import QtWidgets, QtCore, Qt
+from PyQt5 import QtWidgets, QtCore
 
+import common
 import geotek
 from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
 from prefs import Preferences
@@ -19,14 +15,16 @@ from prefs import Preferences
 class MainWindow(QtWidgets.QDialog):
     def __init__(self, app):
         QtWidgets.QDialog.__init__(self)
+        self.VERSION = "2.1"
         self.app = app
+        self.app_path = None # init'd in self.initPrefs()
 
         self.initGUI()
         self.initPrefs()
         self.installRulers()
 
     def initGUI(self):
-        self.setWindowTitle("LacCore/CSDCO Geotek Image Converter v2.0")
+        self.setWindowTitle("LacCore/CSDCO Geotek Image Converter v{}".format(self.VERSION))
         
         vlayout = QtWidgets.QVBoxLayout(self)
 
@@ -81,14 +79,23 @@ class MainWindow(QtWidgets.QDialog):
         self.stackedLayout.setCurrentIndex(1 if show else 0)
 
     def initPrefs(self):
-        prefPath = os.path.join(os.getcwd(), "prefs.pk")
+        try:
+            self.app_path = common.get_app_path()
+        except common.InvalidApplicationPathError as iape:
+            errbox(self, "Invalid Application Path", "Couldn't find application directory, exiting.")
+            raise iape # re-raise and bail
+        prefPath = os.path.join(self.app_path, "prefs.pk")
         self.prefs = Preferences(prefPath)
         self.installPrefs()
 
     def installRulers(self):
-        rulersPath = os.path.join(os.getcwd(), "rulers")
-        if not os.path.exists(rulersPath):
-            os.mkdir(rulersPath)
+        rulersPath = os.path.join(self.app_path, "rulers")
+        try:
+            common.mkdir_if_needed(rulersPath)
+        except:
+            err = sys.exc_info()
+            errbox(self, "Process failed", "{}".format("Failed to create {}.\nUnhandled error {}: {}".format(rulersPath, err[0], err[1])))
+            logging.error(traceback.format_exc())            
         rulerFiles = [f for f in os.listdir(rulersPath) if os.path.isfile(os.path.join(rulersPath, f))
             and os.path.basename(f)[0] != '.'] # no hidden files
         if len(rulerFiles) == 0:
@@ -119,7 +126,7 @@ class MainWindow(QtWidgets.QDialog):
         event.accept() # allow window to close - event.ignore() to veto close
 
     def getRulerPath(self):
-        return os.path.join(os.getcwd(), "rulers", str(self.rulerCombo.currentText()))
+        return os.path.join(self.app_path, "rulers", str(self.rulerCombo.currentText()))
 
     def processImageFiles(self):
         imgFiles = self.imageList.getFiles()
@@ -141,7 +148,7 @@ class MainWindow(QtWidgets.QDialog):
                     outputBaseName = os.path.basename(os.path.dirname(os.path.normpath(imgPath)))
                 else:
                     outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))
-                geotek.prepare_geotek(imgPath, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, os.getcwd())
+                geotek.prepare_geotek(imgPath, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, self.app_path)
             success = True
         except:
             err = sys.exc_info()
@@ -153,34 +160,6 @@ class MainWindow(QtWidgets.QDialog):
             if success:
                 infobox(self, "Yay!", "Successfully converted {} image files.".format(len(imgFiles)))
                 self.imageList.clear()
-
-# Tried a threaded approach to getting around spotty progress bar updates
-# during processing before discovering that QDialog (vs QWidget) responds
-# well to updates.
-#
-# class GeotekProcessThread(QtCore.QThread):
-#     def __init__(self, imgPath, rulerPath, dpi, icdScaling, outputBaseName, destDir):
-#         QtCore.QThread.__init__(self)
-#         self.imgPath = imgPath
-#         self.rulerPath = rulerPath
-#         self.dpi = dpi
-#         self.icdScaling = icdScaling
-#         self.outputBaseName = outputBaseName
-#         self.destDir = destDir
-# 
-#     def __del__(self):
-#         self.wait()
-# 
-#     def run(self):
-#         geotek.prepare_geotek(self.imgPath, self.rulerPath, self.dpi, self.icdScaling, self.outputBaseName, self.destDir)
-# 
-# in processImageFiles:
-                # geotekThread = GeotekProcessThread(imgPath, self.getRulerPath(), dpi, icdScaling, outputBaseName, os.getcwd())
-                # geotekThread.start()
-                # while not geotekThread.isFinished():
-                #     self.app.processEvents()
-                #     time.sleep(0.1)
-                    #print("Waiting...")
 
 
 if __name__ == '__main__':
