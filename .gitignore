@@ -1,11 +1,15 @@
 .DS_Store
 .vscode/*
 ve_ImageProcessing/*
+ve_ImageProcessing_py36_32bit/*
 build/*
 dist/*
+dist_xrf/*
+dist_geotek/*
 __pycache__/*
 *.pyc
 *.spec
 prefs.pk
 *.tif
 *.jpg
+breadcrumb.txt
