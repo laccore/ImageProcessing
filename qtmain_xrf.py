@@ -57,6 +57,14 @@ class MainWindow(QtWidgets.QDialog):
         self.convertButton.setAutoDefault(False)
         self.buttonPanel = TwoButtonPanel(self.saveDefaultsButton, self.convertButton)
 
+        outputNamingLayout = QtWidgets.QHBoxLayout()
+        self.outputNamingCombo = QtWidgets.QComboBox()
+        self.outputNamingCombo.addItems(["Use input file's name", "Use name of input file's parent directory"])
+        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.outputNamingCombo.sizePolicy().verticalPolicy())
+        outputNamingLayout.addWidget(QtWidgets.QLabel("Output Naming:"))
+        outputNamingLayout.addWidget(self.outputNamingCombo)
+        vlayout.addLayout(outputNamingLayout)
+
         self.progressPanel = ProgressPanel(self)
 
         self.stackedLayout = QtWidgets.QStackedLayout()        
@@ -89,6 +97,8 @@ class MainWindow(QtWidgets.QDialog):
         if geom is not None:
             self.setGeometry(geom)
         self.gamma.setText(self.prefs.get("gamma", "1.4"))
+        # default to input file name
+        self.outputNamingCombo.setCurrentIndex(self.prefs.get("outputNaming", 0))        
 
     def savePrefs(self):
         self.prefs.set("windowGeometry", self.geometry())
@@ -96,6 +106,7 @@ class MainWindow(QtWidgets.QDialog):
 
     def saveDefaultSettings(self):
         self.prefs.set("gamma", self.gamma.text())
+        self.prefs.set("outputNaming", self.outputNamingCombo.currentIndex())
 
     # override QWidget.closeEvent()
     def closeEvent(self, event):
@@ -121,12 +132,12 @@ class MainWindow(QtWidgets.QDialog):
         self.progressPanel.clear()
         xrf.setProgressListener(self.progressPanel)
         try:
-            parentDirBasename = True
+            parentDirBasename = self.outputNamingCombo.currentIndex() == 1
             for imgPath in imgFiles:
                 if parentDirBasename:
                     outputBaseName = os.path.basename(os.path.dirname(os.path.normpath(imgPath)))
                 else:
-                    outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))
+                    outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))            
                 xrf.prepare_xrf(imgPath, self.getRulerPath(), gamma, outputBaseName, destDir=os.getcwd())
             success = True
         except:
