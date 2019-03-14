@@ -18,6 +18,7 @@ from prefs import Preferences
 class MainWindow(QtWidgets.QDialog):
     def __init__(self, app):
         QtWidgets.QDialog.__init__(self)
+        self.VERSION = "1.1"
         self.app = app
 
         self.initGUI()
@@ -25,7 +26,7 @@ class MainWindow(QtWidgets.QDialog):
         self.installRulers()
 
     def initGUI(self):
-        self.setWindowTitle("LacCore/CSDCO XRF Image Converter v1.0")
+        self.setWindowTitle("LacCore/CSDCO XRF Image Converter v{}".format(self.VERSION))
         
         vlayout = QtWidgets.QVBoxLayout(self)
 
