@@ -2,14 +2,11 @@
 # qtmain_xrf.py
 # PyQt GUI wrapper of XRF processing logic
 
-import logging
-import os
-import sys
-import time
-import traceback
+import logging, os, sys, time, traceback
 
 from PyQt5 import QtWidgets, QtCore, Qt
 
+import common
 import xrf
 from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
 from prefs import Preferences
@@ -20,6 +17,7 @@ class MainWindow(QtWidgets.QDialog):
         QtWidgets.QDialog.__init__(self)
         self.VERSION = "1.1"
         self.app = app
+        self.app_path = None # init'd in self.initPrefs()
 
         self.initGUI()
         self.initPrefs()
@@ -78,12 +76,17 @@ class MainWindow(QtWidgets.QDialog):
         self.stackedLayout.setCurrentIndex(1 if show else 0)
 
     def initPrefs(self):
-        prefPath = os.path.join(os.getcwd(), "prefs.pk")
+        try:
+            self.app_path = common.get_app_path()
+        except common.InvalidApplicationPathError as iape:
+            errbox(self, "Invalid Application Path", "Couldn't find application directory, exiting.")
+            raise iape # re-raise and bail        
+        prefPath = os.path.join(self.app_path, "prefs.pk")
         self.prefs = Preferences(prefPath)
         self.installPrefs()
 
     def installRulers(self):
-        rulersPath = os.path.join(os.getcwd(), "rulers")
+        rulersPath = os.path.join(self.app_path, "rulers")
         if not os.path.exists(rulersPath):
             os.mkdir(rulersPath)
         rulerFiles = [f for f in os.listdir(rulersPath) if os.path.isfile(os.path.join(rulersPath, f))
@@ -115,7 +118,7 @@ class MainWindow(QtWidgets.QDialog):
         event.accept() # allow window to close - event.ignore() to veto close
 
     def getRulerPath(self):
-        return os.path.join(os.getcwd(), "rulers", str(self.rulerCombo.currentText()))
+        return os.path.join(self.app_path, "rulers", str(self.rulerCombo.currentText()))
 
     def processImageFiles(self):
         imgFiles = self.imageList.getFiles()
@@ -139,7 +142,7 @@ class MainWindow(QtWidgets.QDialog):
                     outputBaseName = os.path.basename(os.path.dirname(os.path.normpath(imgPath)))
                 else:
                     outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))            
-                xrf.prepare_xrf(imgPath, self.getRulerPath(), gamma, outputBaseName, destDir=os.getcwd())
+                xrf.prepare_xrf(imgPath, self.getRulerPath(), gamma, outputBaseName, destDir=self.app_path)
             success = True
         except:
             err = sys.exc_info()
