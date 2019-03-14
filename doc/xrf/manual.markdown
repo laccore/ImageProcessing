@@ -49,7 +49,7 @@ if it's currently running. Your ruler images should now be available in the Rule
 There is no limit to the number of ruler images that can be added.
 
 ## Main Window
-The application consists of a single window.
+The application consists of a single window.  
 ![](images/mainwindow.png)
 
 ## Adding Images and Specifying Processing Options
