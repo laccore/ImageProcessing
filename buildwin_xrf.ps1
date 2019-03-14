@@ -1,1 +1,1 @@
-pyinstaller --onefile --name "LacCore XRF Converter" --windowed --icon ..\assets\laccore.ico --dist dist_xrf .\qtmain_xrf.py
+pyinstaller --clean --onefile --name "LacCore XRF Converter" --windowed --icon ..\assets\laccore.ico --dist dist_xrf .\qtmain_xrf.py
