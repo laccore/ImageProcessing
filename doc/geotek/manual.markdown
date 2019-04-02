@@ -3,8 +3,8 @@
 <body bgcolor="#DDDDDD"> <!-- viewing light gray is far less painful than pure white -->
 LacCore/CSDCO Geotek Converter User's Guide
 --------------------
-*March 13, 2019*  
-*version 2.1*
+*April 2, 2019*  
+*version 2.2*
 
 ## Introduction
 
@@ -14,10 +14,10 @@ and use in applications like the visualization tool [Corelyzer](https://csdco.um
 and the Initial Core Description (ICD) tool [PSICAT](https://csdco.umn.edu/resources/software/psicat).
 
 The Converter was developed to replace a collection of Photoshop scripts. It is free, available for Windows and macOS/OSX, written in [Python](https://python.org),
-and leans heavily on the [Pillow](https://python-pillow.org/) imaging library. Source code is available
+and leans heavily on the [OpenCV](https://opencv.org/) imaging library. Source code is available
 on [GitHub](https://github.com/laccore/ImageProcessing).
 
-## Overview
+## What the Converter Does
 
 For each vertically-oriented core image processed, the Converter:
 
@@ -36,20 +36,28 @@ For each vertically-oriented core image processed, the Converter:
 
 The Converter expects that:
 
-- Images to be processed are vertically-oriented, with the core top at the top of the image
-- Ruler images are horizontally-oriented, with values increasing from left to right
+- Core and ruler images are in TIFF or JPEG format.
+- Core images are vertically-oriented, with the core top at the top of the image.
+- Ruler images are horizontally-oriented, with values increasing from left to right.
+- Core images are RGB with 16-bit or 8-bit color depth.
+- Ruler images are RGB or grayscale, with 16-bit or 8-bit color depth. Ruler images are automatically adjusted to match the color depth of the core image.
+- The width of the applied ruler image is greater than or equal to the height of vertically-oriented core images being converted.
 
-It is important to ensure the resolution of the ruler image matches the resolution of the image(s) being processed
-or the scale will be inaccurate. The application provides a single grayscale ruler image with resolution 508 dots
+It is **critical** to ensure the resolution of the ruler image matches the resolution of the core image(s) being processed
+or the ruler's depth scale will be inaccurate.
+
+The application provides a single grayscale ruler image with resolution 508 dots
 per inch (DPI), or 20 pixels per millimeter (ppmm).
 
 If your core imagery isn't 508 DPI/20 ppmm, you'll need to provide your own ruler image(s). We created our ruler image
-by scanning a physical ruler on our linescan imager, and suggest you do the same. Alternately, you can use an image
-editing tool like Photoshop or (free and open-source) [GIMP](https://www.gimp.org/) to resize the provided ruler as needed. For instance, if you need a 254 DPI
-ruler, resize the provided 508 DPI ruler to 50% (508 dots/inch * 0.5 = 254 dots/inch) of its original size.
+by scanning a physical ruler on our linescan imager, and suggest you do the same.
+
+Alternately, if you need a lower-resolution ruler, an image editing tool like Photoshop or (free and open-source) [GIMP](https://www.gimp.org/) can be used to downscale the provided ruler as needed. For instance, if you need a 254 DPI
+ruler, resize the provided 508 DPI ruler to 50% (508 dots/inch * 0.5 = 254 dots/inch) of its original size. Note that this
+method won't work well if you need a higher-resolution ruler, as an upscaled image will appear blurry/pixellated.
 
 To make your ruler images
-available in the Converter, place them in the "rulers" folder alongside the Converter application, then restart the Converter
+available to the Converter, place them in the "rulers" folder alongside the Converter application, then restart the Converter
 if it's currently running. Your ruler images should now be available in the Ruler dropdown menu.
 
 ![](images/rulersdir.png)
@@ -66,10 +74,10 @@ First, add one or more images to be processed. Images can be selected via the "A
 files into the "Images to be converted" list. Next, specify desired processing options. A description of each option follows:
 
 **Image and Ruler DPI**  
-The resolution of your images and ruler image, e.g. 508.
+The resolution of core image(s) and ruler image, e.g. 508.
 
 **Trim __ inches from top of core image**  
-If the core top (left side of the image) contains extraneous pixels, they can be removed from the output images.
+If the core top contains extraneous pixels, they can be removed from the output images.
 The amount to remove is indicated in inches, which is converted to pixels based on the value in **Image and Ruler DPI**.
 Note that the "dots" in "dots per inch" is synonymous with "pixels" in this context.
   
