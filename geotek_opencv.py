@@ -12,16 +12,13 @@
 # 5. Create ICD-sized version of the image by rotating 90 CW so core
 # top is on top, downscaling image to 30% (default, can be customized),
 # and writing JPEG to ICD dir created in application root directory.
-# 6. Output images' names are based on input image's parent directory
-# name, with format-appropriate extension added e.g. /coreimage/img1.tif
-# would yield [app root]/tiff/coreimage.tif, [app root]/jpeg/coreimage.jpg,
-# and [app root]/ICD/coreimage.jpg
+
 
 import os
 import numpy as np
 import cv2 # OpenCV
 
-from common import create_dirs
+from common import create_dirs, UnexpectedColorDepthError, RulerTooShortError
 
 ProgressListener = None
 
@@ -35,6 +32,55 @@ def reportProgress(value, text):
     if ProgressListener:
         ProgressListener.setValueAndText(value, text)
 
+# Infer and return color depth from numpy array dtype - 8 or 16 bit,
+# otherwise None.
+def get_color_depth(img):
+    if img.dtype == 'uint16':
+        return 16
+    elif img.dtype == 'uint8':
+        return 8
+    else:
+        return None
+
+# Return pixel component count - 3 for RGB, 1 for grayscale,
+# None for anything else.
+def get_component_count(img):
+    # third (component count) element of shape tuple is omitted for
+    # grayscale images, thus the len()-based tests
+    if len(img.shape) == 3:
+        return img.shape[2]
+    elif len(img.shape) == 2:
+        return 1 # grayscale
+    else:
+        return None
+
+# Return three-component RGB image from one-component grayscale.
+def grayscale_to_rgb(img):
+    rgb_img = np.stack((img,)*3, axis=-1)
+    return rgb_img
+
+# Load ruler image file at rulerPath, convert grayscale to
+# RGB color, adjust depth to match colorDepth.
+def load_ruler_image(rulerPath, colorDepth):
+    ruler_img = cv2.imread(rulerPath, -1) # -1 to preserve file's color depth
+    rulerComponents = get_component_count(ruler_img)
+    rulerDepth = get_color_depth(ruler_img)
+    if colorDepth is None:
+        raise UnexpectedColorDepthError("Ruler image {} has an unrecognized color depth. Only 16-bit and 8-bit are accepted.".format(rulerPath))
+    if rulerComponents == 1: # grayscale
+        print("Converting grayscale ruler to RGB")
+        ruler_img = grayscale_to_rgb(ruler_img)
+    if rulerDepth == 8 and colorDepth == 16:
+        print("Converting 8-bit ruler to 16-bit to match core image")
+        # ruler_img *= 256 alone doesn't work, must explicitly change array dtype
+        # from uint8 to uint16 first
+        ruler_img = ruler_img.astype('uint16')
+        ruler_img *= 256
+    elif rulerDepth == 16 and colorDepth == 8:
+        print("Converting 16-bit ruler to 8-bit to match core image")
+        ruler8bit_img = ruler_img * 1/256.0 # float for Python 2, where 1/256 = 0
+        ruler_img = ruler8bit_img.astype('uint8')
+    return ruler_img
 
 # imgPath - full path to input Geotek image
 # rulerPath - full path to input ruler image - must be in RGB (see Note above)
@@ -50,9 +96,19 @@ def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, de
     TiffDir, JpegDir, IcdDir = 'tiff', 'jpeg', 'ICD'
     create_dirs(destPath, [TiffDir, JpegDir, IcdDir])
 
-    img = cv2.imread(imgPath, -1) # -1 to preserve file's color depth e.g. 16-bit
+    # Load core image
+    img = cv2.imread(imgPath, -1) # -1 to preserve file's color depth
     print("Image depth: {}".format(img.dtype))
-    wid, hit = img.shape[:2]
+    colorDepth = get_color_depth(img)
+    if colorDepth is None:
+        raise UnexpectedColorDepthError("Image {} has an unrecognized color depth. Only 16-bit and 8-bit are accepted.".format(imgPath))
+    imageWidth = img.shape[0] # this is img.height, but due to upcoming rotation height will be image width
+
+    # Load ruler image and confirm it's long enough for core image
+    ruler_img = load_ruler_image(rulerPath, colorDepth)
+    rulerWidth = ruler_img.shape[1]
+    if rulerWidth < imageWidth:
+        raise RulerTooShortError("Ruler image {} is too short for core image {}".format(rulerPath, imgPath))
 
     # Rotate image 90deg counter-clockwise so core top is at image left
     reportProgress(10, baseProgStr + "rotating")
@@ -64,32 +120,27 @@ def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, de
     # print("chopWidth = {} pixels".format(chopWidth))
     chop_img = np.delete(adj_img, range(0, chopWidth), axis=1)
 
-    # Load ruler file
-    reportProgress(60, baseProgStr + "adding ruler")
-    ruler_img = cv2.imread(rulerPath, -1)
-    print("Ruler image depth: {}".format(ruler_img.dtype))
-    rh, rw = ruler_img.shape[:2]
-
     # Trim end of ruler so its width matches trimmed core image width, then
     # add to bottom of core image. Image widths must be the same to stack vertically
     # with numpy.concatenate().
-    ruler_img = np.delete(ruler_img, range(wid - chopWidth, rw), axis=1)
-    rhit, rwid = ruler_img.shape[:2]
-    dest_img = np.concatenate((chop_img, ruler_img), axis=0)
+    reportProgress(60, baseProgStr + "adding ruler")
+    ruler_img = np.delete(ruler_img, range(imageWidth - chopWidth, rulerWidth), axis=1)
+    tiff_img = np.concatenate((chop_img, ruler_img), axis=0)
 
     # Save as TIFF to tiff subdir
     reportProgress(70, baseProgStr + "writing TIFF")
-    cv2.imwrite(os.path.join(destPath, TiffDir, outputBaseName + ".tif"), dest_img)
+    cv2.imwrite(os.path.join(destPath, TiffDir, outputBaseName + ".tif"), tiff_img)
 
-    # Save as JPEG to jpeg subdir
+    # Save as JPEG to jpeg subdir, downscaling 16-bit to 8-bit if needed. JPEG
+    # components must be 8-bit.
     reportProgress(80, baseProgStr + "writing JPEG")
-    rgb8bit_img = dest_img * 0.00390625 # scale 16-bit values to 8-bit by multiplying by 1/256
-    cv2.imwrite(os.path.join(destPath, JpegDir, outputBaseName + ".jpg"), rgb8bit_img)
+    jpeg_img = tiff_img * 1/256.0 if colorDepth == 16 else tiff_img # float for Python 2, where 1/256 = 0
+    cv2.imwrite(os.path.join(destPath, JpegDir, outputBaseName + ".jpg"), jpeg_img)
 
     # For ICD image, rotate back to vertical (core top at image top),
     # resize by [icdScaling] percentage and write as JPEG in ICD subdir
     reportProgress(90, baseProgStr + "writing ICD JPEG")
-    icd_img = np.rot90(rgb8bit_img, axes=(1,0))
+    icd_img = np.rot90(jpeg_img, axes=(1,0))
     icdhit, icdwid = icd_img.shape[:2]
     scaling = icdScaling/100.0
     scaled_dims = (int(round(icdwid * scaling)), int(round(icdhit * scaling)))
@@ -98,6 +149,7 @@ def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, de
 
 
 if __name__ == "__main__":
-    rulerPath = 'rulers/Geotek20ppmmRuler16bitRGB.tif'
-    # prepare_geotek('testdata/OGDP-OLD14-2A-15Y-1-A.tif', rulerPath=None, dpi=508, trim=0.25, icdScaling=25, outputBaseName="OGDP-OLD14-2A-15Y-1-A", destPath='testdata')
-    prepare_geotek('testdata/stubby.tif', rulerPath, dpi=508, trim=0.25, icdScaling=25, outputBaseName="stubby", destPath='testdata')
+    rulerFiles = ["16bitRGB", "8bitRGB", "16bitGrayscale", "8bitGrayscale"]
+    for rf in rulerFiles:
+        rulerPath = "rulers/Geotek20ppmmRuler{}.tif".format(rf)
+        prepare_geotek('testdata/stubby8bit.tif', rulerPath, dpi=508, trim=0.25, icdScaling=25, outputBaseName="stubby8bit_{}".format(rf), destPath='testdata')

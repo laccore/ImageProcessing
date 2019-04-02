@@ -37,3 +37,14 @@ def get_app_path():
 class InvalidApplicationPathError(Exception):
     def __init__(self, message):
         super(InvalidApplicationPathError, self).__init__(message)
+        self.message = message
+
+class UnexpectedColorDepthError(Exception):
+    def __init__(self, message):
+        super(UnexpectedColorDepthError, self).__init__(message)
+        self.message = message
+
+class RulerTooShortError(Exception):
+    def __init__(self, message):
+        super(RulerTooShortError, self).__init__(message)
+        self.message = message

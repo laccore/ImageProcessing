@@ -4,10 +4,10 @@
 
 import logging, os, re, sys, time, traceback
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 import common
-import geotek
+import geotek_opencv as geotek
 from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
 from prefs import Preferences
 
@@ -161,6 +161,10 @@ class MainWindow(QtWidgets.QDialog):
                     outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))
                 geotek.prepare_geotek(imgPath, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, self.app_path)
             success = True
+        except common.RulerTooShortError as e:
+            errbox(self, "Ruler Too Short", "{}".format(e.message))
+        except common.UnexpectedColorDepthError as e:
+            errbox(self, "Unexpected Color Depth", "{}".format(e.message))
         except:
             err = sys.exc_info()
             errbox(self, "Process failed", "{}".format("Unhandled error {}: {}".format(err[0], err[1])))
