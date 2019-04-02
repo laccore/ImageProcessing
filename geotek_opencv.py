@@ -18,7 +18,7 @@ import os
 import numpy as np
 import cv2 # OpenCV
 
-from common import create_dirs, UnexpectedColorDepthError, RulerTooShortError
+from common import create_dirs, UnexpectedColorDepthError, RulerTooShortError, get_component_count, get_color_depth, grayscale_to_rgb
 
 ProgressListener = None
 
@@ -31,33 +31,6 @@ def reportProgress(value, text):
     global ProgressListener
     if ProgressListener:
         ProgressListener.setValueAndText(value, text)
-
-# Infer and return color depth from numpy array dtype - 8 or 16 bit,
-# otherwise None.
-def get_color_depth(img):
-    if img.dtype == 'uint16':
-        return 16
-    elif img.dtype == 'uint8':
-        return 8
-    else:
-        return None
-
-# Return pixel component count - 3 for RGB, 1 for grayscale,
-# None for anything else.
-def get_component_count(img):
-    # third (component count) element of shape tuple is omitted for
-    # grayscale images, thus the len()-based tests
-    if len(img.shape) == 3:
-        return img.shape[2]
-    elif len(img.shape) == 2:
-        return 1 # grayscale
-    else:
-        return None
-
-# Return three-component RGB image from one-component grayscale.
-def grayscale_to_rgb(img):
-    rgb_img = np.stack((img,)*3, axis=-1)
-    return rgb_img
 
 # Load ruler image file at rulerPath, convert grayscale to
 # RGB color, adjust depth to match colorDepth.
