@@ -67,7 +67,27 @@ def get_component_count(img):
 # Return three-component RGB image from one-component grayscale.
 def grayscale_to_rgb(img):
     rgb_img = np.stack((img,)*3, axis=-1)
-    return rgb_img        
+    return rgb_img
+
+# Return single-component grayscale image from three-component RGB
+# consisting entirely of grays. This method will not work for RGB
+# images with non-gray pixels!!!
+#
+# RGB image of width W and height H is a 3D numpy array of form
+# [[[r0, g0, b0], [r1, g1, b1]..., [rW-1, gW-1, bW-1]], # row 0
+#  [[r0, g0, b0], [r1, g1, b1]..., [rW-1, gW-1, bW-1]], # row 1
+#  ...
+#  [[r0, g0, b0], [r1, g1, b1]..., [rW-1, gW-1, bW-1]]] # row H-1.
+# 
+# To convert to grayscale, we extract a 2D array of form
+# [[gray0, gray1, gray2, gray3 ... grayW-1], # row 0
+# ...
+#  [gray0, gray1, gray2, gray3 ... grayW-1]] # row H-1.
+# Doesn't matter which of R, G or B we choose since they're all the same.
+def gray_rgb_to_grayscale(img):
+    assert len(img.shape) == 3 and img.shape[2] == 3
+    gs_img = img[:,:,0].copy() # numpy is amazing
+    return gs_img
 
 ### Errors
 class InvalidApplicationPathError(Exception):
