@@ -3,7 +3,7 @@
 <body bgcolor="#DDDDDD"> <!-- viewing light gray is far less painful than pure white -->
 LacCore/CSDCO Geotek Converter User's Guide
 --------------------
-*April 2, 2019*  
+*May 9, 2019*  
 *version 2.2*
 
 ## Introduction
@@ -74,7 +74,7 @@ First, add one or more images to be processed. Images can be selected via the "A
 files into the "Images to be converted" list. Next, specify desired processing options. A description of each option follows:
 
 **Image and Ruler DPI**  
-The resolution of core image(s) and ruler image, e.g. 508.
+The resolution of core image(s) and ruler image, in dots per inch (DPI), e.g. 508.
 
 **Trim __ inches from top of core image**  
 If the core top contains extraneous pixels, they can be removed from the output images.
@@ -84,11 +84,11 @@ Note that the "dots" in "dots per inch" is synonymous with "pixels" in this cont
 For example, trimming 0.25 inches with a DPI of 508 would result in the leftmost 127 pixels (0.25 inch \* 508 pixels/inch)
 being removed from output images.
 
-If you don't want to trim anything, set this value to zero.
+If you don't want to trim anything, set this value to zero or leave it blank.
   
-**Scale ICD-ready Image by \_\_ \%**  
-The percentage by which the output ICD image should be downscaled, e.g. with a value of 30%, a 1000 x 240 image
-would be downscaled to 300 x 72.
+**Resize ICD-ready Image by \_\_ \%**  
+The percentage by which the output ICD image should be downscaled, relative to the original image size.  
+For example, with a value of 30%, a 1000 x 240 image would be downscaled to 300 x 72.
 
 **Ruler**  
 A list of the ruler images in the "rulers" directory. The selected ruler image will be added to the bottom of the core image.
