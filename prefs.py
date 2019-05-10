@@ -31,6 +31,9 @@ class Preferences:
         else:
             logger.info("no prefs found at " + self.prefPath)
 
+    def contains(self, key):
+        return key in self.prefmap
+
     def get(self, key, default=""):
         return self.prefmap[key] if key in self.prefmap else default
     
