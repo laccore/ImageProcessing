@@ -7,7 +7,7 @@ import logging, os, sys, time, traceback
 from PyQt5 import QtWidgets, QtCore, Qt
 
 import common
-import xrf
+import xrf_opencv as xrf
 from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
 from prefs import Preferences
 
@@ -15,20 +15,21 @@ from prefs import Preferences
 class MainWindow(QtWidgets.QDialog):
     def __init__(self, app):
         QtWidgets.QDialog.__init__(self)
-        self.VERSION = "1.1"
+        self.VERSION = "1.2"
         self.app = app
         self.app_path = None # init'd in self.initPrefs()
 
+        self.initAppPath()
         self.initGUI()
-        self.initPrefs()
         self.installRulers()
+        self.initPrefs()
 
     def initGUI(self):
         self.setWindowTitle("LacCore/CSDCO XRF Image Converter v{}".format(self.VERSION))
         
         vlayout = QtWidgets.QVBoxLayout(self)
 
-        listLabel = "Images to be converted: click Add, or drag and drop files in the list below to add images."
+        listLabel = "Images to be converted: click Add, or drag and drop files onto the list below to add images."
         self.imageList = FileListPanel(listLabel)
         self.imageList.addButton.setAutoDefault(False)
         self.imageList.rmButton.setAutoDefault(False)
@@ -75,12 +76,14 @@ class MainWindow(QtWidgets.QDialog):
     def showProgressLayout(self, show):
         self.stackedLayout.setCurrentIndex(1 if show else 0)
 
-    def initPrefs(self):
+    def initAppPath(self):
         try:
             self.app_path = common.get_app_path()
         except common.InvalidApplicationPathError as iape:
             errbox(self, "Invalid Application Path", "Couldn't find application directory, exiting.")
-            raise iape # re-raise and bail        
+            raise iape # re-raise and bail
+
+    def initPrefs(self):
         prefPath = os.path.join(self.app_path, "prefs.pk")
         self.prefs = Preferences(prefPath)
         self.installPrefs()
@@ -101,6 +104,9 @@ class MainWindow(QtWidgets.QDialog):
         if geom is not None:
             self.setGeometry(geom)
         self.gamma.setText(self.prefs.get("gamma", "1.4"))
+        ruler = self.prefs.get("ruler", "")
+        rulerIdx = self.rulerCombo.findText(ruler)
+        self.rulerCombo.setCurrentIndex(rulerIdx if rulerIdx >= 0 else 0)
         # default to input file name
         self.outputNamingCombo.setCurrentIndex(self.prefs.get("outputNaming", 0))        
 
@@ -110,6 +116,7 @@ class MainWindow(QtWidgets.QDialog):
 
     def saveDefaultSettings(self):
         self.prefs.set("gamma", self.gamma.text())
+        self.prefs.set("ruler", self.rulerCombo.currentText())
         self.prefs.set("outputNaming", self.outputNamingCombo.currentIndex())
 
     # override QWidget.closeEvent()
@@ -126,9 +133,13 @@ class MainWindow(QtWidgets.QDialog):
             infobox(self, "No Images", "Add at least one image to be converted.")
             return
 
-        gamma = float(self.gamma.text())
-        if (gamma <= 0.0):
-            infobox(self, "Invalid Gamma", "Gamma correction must be greater than 0")
+        try:
+            gamma = float(self.gamma.text())
+            if (gamma <= 0.0):
+                infobox(self, "Invalid Gamma", "Gamma correction must be greater than 0.0")
+                return
+        except ValueError:
+            errbox(self, "Invalid Gamma", "Gamma value must be numeric and greater than 0.0")
             return
 
         success = False
