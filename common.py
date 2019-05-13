@@ -100,6 +100,11 @@ class UnexpectedColorDepthError(Exception):
         super(UnexpectedColorDepthError, self).__init__(message)
         self.message = message
 
+class UnexpectedComponentCountError(Exception):
+    def __init__(self, message):
+        super(UnexpectedColorDepthError, self).__init__(message)
+        self.message = message
+
 class RulerTooShortError(Exception):
     def __init__(self, message):
         super(RulerTooShortError, self).__init__(message)
