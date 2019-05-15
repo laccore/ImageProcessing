@@ -4,7 +4,7 @@
 
 import logging, os, sys, time, traceback
 
-from PyQt5 import QtWidgets, QtCore, Qt
+from PyQt5 import QtWidgets
 
 import common
 import xrf_opencv as xrf
