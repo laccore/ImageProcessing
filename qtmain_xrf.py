@@ -155,6 +155,12 @@ class MainWindow(QtWidgets.QDialog):
                     outputBaseName, _ = os.path.splitext(os.path.basename(imgPath))            
                 xrf.prepare_xrf(imgPath, self.getRulerPath(), gamma, outputBaseName, destDir=self.app_path)
             success = True
+        except common.UnexpectedColorDepthError as e:
+            errbox(self, "Unexpected Color Depth", "{}".format(e.message))
+        except common.UnexpectedComponentCountError as e:
+            errbox(self, "Unexpected Component Count", "{}".format(e.message))
+        except common.RulerTooShortError as e:
+            errbox(self, "Ruler Too Short", "{}".format(e.message))
         except:
             err = sys.exc_info()
             errbox(self, "Process failed", "{}".format("Unhandled error {}: {}".format(err[0], err[1])))
