@@ -120,8 +120,10 @@ def prepare_xrf(imgPath, rulerPath, gamma, outputBaseName, destDir):
     imgWidth = img.shape[1]
     colorDepth = get_color_depth(img)
     component_count = get_component_count(img)
-    if component_count != 1:
-        raise UnexpectedColorDepthError("Image {} has unexpected color depth. Only grayscale images are accepted.")
+    if component_count == 3:
+        raise UnexpectedComponentCountError("Image {} appears to be RGB. Only grayscale images are accepted.".format(imgPath))
+    elif component_count != 1:
+        raise UnexpectedComponentCountError("Image {} has an unexpected number of color components ({}). Only grayscale images are accepted.".format(imgPath, component_count))
     ruler_img = load_ruler_image(rulerPath, colorDepth)
     rulerWidth = ruler_img.shape[1]
     if rulerWidth < imgWidth:
