@@ -18,7 +18,7 @@ import os
 import numpy as np
 import cv2 # OpenCV
 
-from common import create_dirs, UnexpectedColorDepthError, RulerTooShortError, get_component_count, get_color_depth, grayscale_to_rgb
+from common import create_dirs, UnexpectedColorDepthError, RulerTooShortError, get_component_count, get_color_depth, grayscale_to_rgb, remove_alpha_channel
 
 ProgressListener = None
 
@@ -82,6 +82,12 @@ def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, de
     rulerWidth = ruler_img.shape[1]
     if rulerWidth < imageWidth:
         raise RulerTooShortError("Ruler image {} is too short for core image {}".format(rulerPath, imgPath))
+
+    # Remove alpha channel from core image and ruler image if needed
+    if get_component_count(img) == 4:
+        img = remove_alpha_channel(img)
+    if get_component_count(ruler_img) == 4:
+        ruler_img = remove_alpha_channel(ruler_img)
 
     # Rotate image 90deg counter-clockwise so core top is at image left
     reportProgress(10, baseProgStr + "rotating")

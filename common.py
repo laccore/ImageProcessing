@@ -52,7 +52,7 @@ def get_color_depth(img):
     else:
         return None
 
-# Return pixel component count - 3 for RGB, 1 for grayscale,
+# Return pixel component count: 4 for RGBA, 3 for RGB, 1 for grayscale,
 # None for anything else.
 def get_component_count(img):
     # third (component count) element of shape tuple is omitted for
@@ -63,6 +63,11 @@ def get_component_count(img):
         return 1 # grayscale
     else:
         return None
+
+def remove_alpha_channel(img):
+    if get_component_count(img) == 4:
+        img = img[:,:,:3]
+    return img
 
 # Return three-component RGB image from one-component grayscale.
 def grayscale_to_rgb(img):
