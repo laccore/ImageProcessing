@@ -15,7 +15,7 @@ from prefs import Preferences
 class MainWindow(QtWidgets.QDialog):
     def __init__(self, app):
         QtWidgets.QDialog.__init__(self)
-        self.VERSION = "2.2"
+        self.VERSION = "2.3"
         self.app = app
         self.app_path = None # init'd in self.initAppPath()
 
