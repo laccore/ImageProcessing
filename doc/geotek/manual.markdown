@@ -3,8 +3,8 @@
 <body bgcolor="#DDDDDD"> <!-- viewing light gray is far less painful than pure white -->
 LacCore/CSDCO Geotek Converter User's Guide
 --------------------
-*May 9, 2019*  
-*version 2.2*
+*December 15, 2020*  
+*version 2.3*
 
 ## Introduction
 
