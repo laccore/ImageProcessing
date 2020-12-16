@@ -3,8 +3,8 @@
 <body bgcolor="#DDDDDD"> <!-- viewing light gray is far less painful than pure white -->
 LacCore/CSDCO XRF Converter User's Guide
 --------------------
-*May 10, 2019*  
-*version 1.2*
+*December 15, 2020*  
+*version 1.3*
 
 ## Introduction
 
