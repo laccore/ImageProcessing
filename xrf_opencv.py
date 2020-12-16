@@ -13,7 +13,7 @@ import os
 import cv2 # OpenCV
 import numpy
 
-from common import create_dirs, get_color_depth, get_component_count, UnexpectedColorDepthError, RulerTooShortError, UnexpectedComponentCountError
+from common import create_dirs, get_color_depth, get_component_count, remove_alpha_channel, UnexpectedColorDepthError, RulerTooShortError, UnexpectedComponentCountError
 
 ProgressListener = None
 
@@ -86,7 +86,9 @@ def load_ruler_image(rulerPath, colorDepth):
         raise UnexpectedColorDepthError("Ruler image {} has an unrecognized color depth. Only 16-bit and 8-bit are accepted.".format(rulerPath))
 
     rulerComponents = get_component_count(ruler_img)
-    if rulerComponents == 3: # convert RGB to grayscale
+    if rulerComponents in [3,4]: # convert RGB(A) to grayscale
+        if rulerComponents == 4:
+            ruler_img = remove_alpha_channel(ruler_img)
         ruler_img = cv2.cvtColor(ruler_img, cv2.COLOR_BGR2GRAY)
     elif rulerComponents != 1:
         raise UnexpectedComponentCountError("Ruler image {} has an unexpected number of color components ({}). Only RGB and grayscale are accepted.".format(rulerPath, rulerComponents))
@@ -120,8 +122,8 @@ def prepare_xrf(imgPath, rulerPath, gamma, outputBaseName, destDir):
     imgWidth = img.shape[1]
     colorDepth = get_color_depth(img)
     component_count = get_component_count(img)
-    if component_count == 3:
-        raise UnexpectedComponentCountError("Image {} appears to be RGB. Only grayscale images are accepted.".format(imgPath))
+    if component_count in [3,4]:
+        raise UnexpectedComponentCountError("Image {} appears to be {}. Only grayscale images are accepted.".format(imgPath, "RGBA" if component_count == 4 else 'RGB'))
     elif component_count != 1:
         raise UnexpectedComponentCountError("Image {} has an unexpected number of color components ({}). Only grayscale images are accepted.".format(imgPath, component_count))
     ruler_img = load_ruler_image(rulerPath, colorDepth)
