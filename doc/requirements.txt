@@ -1,7 +1,7 @@
 altgraph==0.17
 macholib==1.14
 numpy==1.19.4
-opencv-python-headless==4.0.0.21
+opencv-python-headless==4.2.0.32
 pyinstaller==4.1
 pyinstaller-hooks-contrib==2020.10
 PyQt5==5.15.2
