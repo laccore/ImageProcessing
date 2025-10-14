@@ -8,7 +8,7 @@ from PyQt5 import QtWidgets
 
 import common
 import xrf_opencv as xrf
-from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
+from gui import FileListPanel, errbox, infobox, ProgressPanel, ButtonPanel
 from prefs import Preferences
 
 
@@ -33,29 +33,26 @@ class MainWindow(QtWidgets.QDialog):
         self.imageList = FileListPanel(listLabel)
         self.imageList.addButton.setAutoDefault(False)
         self.imageList.rmButton.setAutoDefault(False)
+        self.saveDefaultsButton = QtWidgets.QToolButton()
+        self.saveDefaultsButton.setText("Save Current Settings as Default")
+        self.saveDefaultsButton.clicked.connect(self.saveDefaultSettings)        
         vlayout.addWidget(self.imageList, 1)
 
+        settingsGroupBox = QtWidgets.QGroupBox("Converter Settings")
+        settingsGroupLayout = QtWidgets.QVBoxLayout()
+
         self.gamma = QtWidgets.QLineEdit()
+        self.gamma.setFixedWidth(50)
         gammaLayout = QtWidgets.QHBoxLayout()
         gammaLayout.addWidget(QtWidgets.QLabel("Gamma Correction:"))
         gammaLayout.addWidget(self.gamma)
         gammaLayout.addWidget(QtWidgets.QLabel("typically between 0.8 (darker) and 2.3 (brighter)"), stretch=1)
-        vlayout.addLayout(gammaLayout, 0)
 
         rulerLayout = QtWidgets.QHBoxLayout()
         self.rulerCombo = QtWidgets.QComboBox()
         self.rulerCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.rulerCombo.sizePolicy().verticalPolicy())
         rulerLayout.addWidget(QtWidgets.QLabel("Ruler:"))
         rulerLayout.addWidget(self.rulerCombo)
-        vlayout.addLayout(rulerLayout, 0)
-
-        self.saveDefaultsButton = QtWidgets.QPushButton("Save Settings as Default")
-        self.saveDefaultsButton.clicked.connect(self.saveDefaultSettings)
-        self.saveDefaultsButton.setAutoDefault(False)
-        self.convertButton = QtWidgets.QPushButton("Convert Images")
-        self.convertButton.clicked.connect(self.processImageFiles)
-        self.convertButton.setAutoDefault(False)
-        self.buttonPanel = TwoButtonPanel(self.saveDefaultsButton, self.convertButton)
 
         outputNamingLayout = QtWidgets.QHBoxLayout()
         self.outputNamingCombo = QtWidgets.QComboBox()
@@ -63,9 +60,24 @@ class MainWindow(QtWidgets.QDialog):
         self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.outputNamingCombo.sizePolicy().verticalPolicy())
         outputNamingLayout.addWidget(QtWidgets.QLabel("Output Naming:"))
         outputNamingLayout.addWidget(self.outputNamingCombo)
-        vlayout.addLayout(outputNamingLayout)
 
-        self.progressPanel = ProgressPanel(self)
+        settingsGroupLayout.addLayout(gammaLayout)
+        settingsGroupLayout.addLayout(rulerLayout)
+        settingsGroupLayout.addLayout(outputNamingLayout)
+        settingsGroupLayout.addSpacing(10)
+        settingsGroupLayout.addWidget(self.saveDefaultsButton)
+
+        settingsGroupBox.setLayout(settingsGroupLayout)
+
+        vlayout.addSpacing(10)
+        vlayout.addWidget(settingsGroupBox)
+
+        self.convertButton = QtWidgets.QPushButton("Convert Images")
+        self.convertButton.clicked.connect(self.processImageFiles)
+        self.convertButton.setAutoDefault(False)
+        self.buttonPanel = ButtonPanel(self.convertButton)
+
+        self.progressPanel = ProgressPanel(self, "Converting...")
 
         self.stackedLayout = QtWidgets.QStackedLayout()        
         self.stackedLayout.addWidget(self.buttonPanel)
@@ -118,6 +130,14 @@ class MainWindow(QtWidgets.QDialog):
         self.prefs.set("gamma", self.gamma.text())
         self.prefs.set("ruler", self.rulerCombo.currentText())
         self.prefs.set("outputNaming", self.outputNamingCombo.currentIndex())
+
+        settingsItems = [
+            f"Gamma: {self.gamma.text()}",
+            f"Ruler: {self.rulerCombo.currentText()}",
+            f"Output naming: {self.outputNamingCombo.currentText()}"
+        ]
+        settingsStr = "Saved Default Settings.\n\n" + '\n'.join(settingsItems)
+        infobox(self, 'Saved Default Settings', settingsStr)
 
     # override QWidget.closeEvent()
     def closeEvent(self, event):
