@@ -25,11 +25,11 @@ class MainWindow(QtWidgets.QDialog):
         self.initPrefs()
 
     def initGUI(self):
-        self.setWindowTitle("LacCore/CSDCO XRF Image Converter v{}".format(self.VERSION))
+        self.setWindowTitle("CSD Facility XRF Image Converter v{}".format(self.VERSION))
         
         vlayout = QtWidgets.QVBoxLayout(self)
 
-        listLabel = "Images to be converted: click Add, or drag and drop files onto the list below to add images."
+        listLabel = "Images to be converted: click Add, or drag and drop files into the list below."
         self.imageList = FileListPanel(listLabel)
         self.imageList.addButton.setAutoDefault(False)
         self.imageList.rmButton.setAutoDefault(False)
