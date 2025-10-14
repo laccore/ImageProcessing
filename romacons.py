@@ -9,6 +9,11 @@
 # For ICD, only the first image will be used. A ruler will be added, then the resulting
 # image would be downscaled and output to the ICD directory as JPEG, just as we do
 # in geotek_opencsv.py.
+#
+# Assumptions:
+# - All images to be merged have *exactly* the same pixel count along the depth axis
+# - The same top trim amount will be applied to all images
+# - ICD image will include only the first core image, with ruler added
 
 
 import os
@@ -31,19 +36,13 @@ def reportProgress(value, text):
         ProgressListener.setValueAndText(value, text)
 
 
-### TODO: ADAPT TO ROMACONS ###
-# Assumptions:
-# - All images to be merged have *exactly* the same pixel count along the depth axis
-# - The same top trim amount will be applied to all images
-# - ICD image will include only the first core image, with ruler added
-
 # coreImagePaths - list of full paths to Geotek images to be merged
 # rulerPath - full path to input ruler image - must be in RGB (see Note above)
-# trim - amount, in inches, to trim from the top of each image's top
 # dpi - resolution of input images and ruler
-# icdScaling - percentage to which ICD image should be scaled
+# trim - amount, in inches, to trim from the top of each image's top
+# icdScaling - percentage of original to which ICD image should be scaled
 # outputBaseName - filename (without extension) to use for outputs - format-appropriate extension will be added
-# destDir - directory in which jpeg, tiff, and ICD dirs will be created,
+# destPath - directory in which jpeg, tiff, and ICD dirs will be created,
 # to which image outputs will be written
 def prepare_romacons(coreImagePaths, rulerPath, dpi, trim, icdScaling, outputBaseName, destPath):
     baseProgStr = f"Merging {len(coreImagePaths)} rotated images..."
@@ -72,13 +71,6 @@ def prepare_romacons(coreImagePaths, rulerPath, dpi, trim, icdScaling, outputBas
     depthAxisPixelCounts = [ci.shape[0] for ci in coreImages] # depth axis is vertical in loaded image orientation
     if len(set(depthAxisPixelCounts)) != 1:
         raise Exception(f"Depth axis pixel count of images is not uniform: {depthAxisPixelCounts}")
-    
-    # img = cv2.imread(imgPath, -1) # -1 to preserve file's color depth
-    # print("Image depth: {}".format(img.dtype))
-    # colorDepth = get_color_depth(img)
-    # if colorDepth is None:
-    #     raise UnexpectedColorDepthError("Image {} has an unrecognized color depth. Only 16-bit and 8-bit are accepted.".format(imgPath))
-    # imageWidth = img.shape[0] # this is img.height, but due to upcoming rotation height will be image width
 
     # Load ruler image and confirm it's long enough for core image
     reportProgress(30, baseProgStr + "loading ruler image")
