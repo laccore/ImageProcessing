@@ -122,11 +122,11 @@ class FileListPanel(QtWidgets.QWidget, DragAndDropMixin):
 
 
 class ProgressPanel(QtWidgets.QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, initialText='[progress text]'):
         QtWidgets.QWidget.__init__(self)
         self.parent = parent
         layout = QtWidgets.QVBoxLayout(self)
-        self.label = QtWidgets.QLabel("[progress text]")
+        self.label = QtWidgets.QLabel(initialText)
         self.progress = QtWidgets.QProgressBar()
         self.progress.setMaximum(100)
         layout.addWidget(self.label)
