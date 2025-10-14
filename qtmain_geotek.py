@@ -72,14 +72,14 @@ class MainWindow(QtWidgets.QDialog):
 
         rulerLayout = QtWidgets.QHBoxLayout()
         self.rulerCombo = QtWidgets.QComboBox()
-        self.rulerCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)#, self.rulerCombo.sizePolicy().verticalPolicy())
+        self.rulerCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         rulerLayout.addWidget(QtWidgets.QLabel("Add Ruler:"))
         rulerLayout.addWidget(self.rulerCombo)
 
         outputNamingLayout = QtWidgets.QHBoxLayout()
         self.outputNamingCombo = QtWidgets.QComboBox()
         self.outputNamingCombo.addItems(["Use input file's name", "Use name of input file's parent directory"])
-        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)#self.outputNamingCombo.sizePolicy().verticalPolicy())
+        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         outputNamingLayout.addWidget(QtWidgets.QLabel("Output Naming:"))
         outputNamingLayout.addWidget(self.outputNamingCombo)
 
