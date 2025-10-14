@@ -197,7 +197,7 @@ class MainWindow(QtWidgets.QDialog):
                 errbox(self, "Invalid ICD Scaling", "ICD scaling % must be greater than zero.")
                 return
             outputBaseName = "ROMACONS_out" # TODO
-            romacons.prepare_romacons(imgFiles, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, 'ROMACONS/outputs')
+            romacons.prepare_romacons(imgFiles, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, self.app_path)
             success = True
         except common.RulerTooShortError as e:
             errbox(self, "Ruler Too Short", "{}".format(e.message))
