@@ -4,11 +4,11 @@
 
 import logging, os, re, sys, time, traceback
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 import common
 import geotek_opencv as geotek
-from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel
+from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel, ButtonPanel
 from prefs import Preferences
 
 
@@ -25,63 +25,89 @@ class MainWindow(QtWidgets.QDialog):
         self.initPrefs()
 
     def initGUI(self):
-        self.setWindowTitle("LacCore/CSDCO Geotek Image Converter v{}".format(self.VERSION))
+        self.setWindowTitle("CSD Facility Geotek Image Converter v{}".format(self.VERSION))
         
         vlayout = QtWidgets.QVBoxLayout(self)
+        vlayout.setContentsMargins(10,5,10,5)
 
-        listLabel = "Images to be converted: click Add, or drag and drop files in the list below to add images."
+        listLabel = "Images to be converted: click Add, or drag and drop files into the list below."
         self.imageList = FileListPanel(listLabel)
         self.imageList.addButton.setAutoDefault(False)
         self.imageList.rmButton.setAutoDefault(False)
         vlayout.addWidget(self.imageList, 1)
 
+        settingsGroupBox = QtWidgets.QGroupBox("Converter Settings")
+        settingsGroupLayout = QtWidgets.QVBoxLayout()
+
         self.dpi = QtWidgets.QLineEdit()
         self.trim = QtWidgets.QLineEdit()
         self.icdScaling = QtWidgets.QLineEdit()
-        dpiLayout = QtWidgets.QHBoxLayout()
-        dpiLayout.addWidget(QtWidgets.QLabel("Image and Ruler DPI:"))
-        dpiLayout.addWidget(self.dpi)
-        dpiLayout.addSpacing(20)
-        dpiLayout.addWidget(QtWidgets.QLabel("Trim"))
-        dpiLayout.addWidget(self.trim)
-        dpiLayout.addWidget(QtWidgets.QLabel("inches from top of core image"))
-        dpiLayout.addSpacing(20)
-        dpiLayout.addWidget(QtWidgets.QLabel("Resize ICD-ready image by:"))
-        dpiLayout.addWidget(self.icdScaling)
-        dpiLayout.addWidget(QtWidgets.QLabel("%"))
+        self.fooDefaultsButton = QtWidgets.QToolButton()
+        self.fooDefaultsButton.setText("Save Current Settings as Default")
+        self.fooDefaultsButton.clicked.connect(self.saveDefaultSettings)
 
-        vlayout.addSpacing(10)
-        vlayout.addLayout(dpiLayout, 0)
+        dpiLayout = QtWidgets.QHBoxLayout()
+        dpiLayout.setSpacing(5)
+        dpiLayout.addWidget(QtWidgets.QLabel("Image and Ruler resolution:"))
+        dpiLayout.addWidget(self.dpi, QtCore.Qt.AlignLeft)
+        self.dpi.setFixedWidth(50)
+        dpiLayout.addWidget(QtWidgets.QLabel("DPI"))
+        dpiLayout.addStretch(5)
+
+        trimLayout = QtWidgets.QHBoxLayout()
+        trimLayout.setSpacing(5)
+        trimLayout.addWidget(QtWidgets.QLabel("Trim from top of core image:"))
+        trimLayout.addWidget(self.trim)
+        self.trim.setFixedWidth(50)
+        trimLayout.addWidget(QtWidgets.QLabel("inches"))
+        trimLayout.addStretch(3)
+
+        icdScalingLayout = QtWidgets.QHBoxLayout()
+        icdScalingLayout.setSpacing(5)
+        icdScalingLayout.addWidget(QtWidgets.QLabel("Resize ICD-ready image to:"))
+        icdScalingLayout.addWidget(self.icdScaling)
+        self.icdScaling.setFixedWidth(50)
+        icdScalingLayout.addWidget(QtWidgets.QLabel("% of original"))
+        icdScalingLayout.addStretch(3)
 
         rulerLayout = QtWidgets.QHBoxLayout()
         self.rulerCombo = QtWidgets.QComboBox()
-        self.rulerCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.rulerCombo.sizePolicy().verticalPolicy())
-        rulerLayout.addWidget(QtWidgets.QLabel("Ruler:"))
+        self.rulerCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)#, self.rulerCombo.sizePolicy().verticalPolicy())
+        rulerLayout.addWidget(QtWidgets.QLabel("Add Ruler:"))
         rulerLayout.addWidget(self.rulerCombo)
-        vlayout.addLayout(rulerLayout, 0)
 
         outputNamingLayout = QtWidgets.QHBoxLayout()
         self.outputNamingCombo = QtWidgets.QComboBox()
         self.outputNamingCombo.addItems(["Use input file's name", "Use name of input file's parent directory"])
-        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, self.outputNamingCombo.sizePolicy().verticalPolicy())
+        self.outputNamingCombo.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)#self.outputNamingCombo.sizePolicy().verticalPolicy())
         outputNamingLayout.addWidget(QtWidgets.QLabel("Output Naming:"))
         outputNamingLayout.addWidget(self.outputNamingCombo)
-        vlayout.addLayout(outputNamingLayout)
 
-        self.saveDefaultsButton = QtWidgets.QPushButton("Save Settings as Default")
-        self.saveDefaultsButton.clicked.connect(self.saveDefaultSettings)
-        self.saveDefaultsButton.setAutoDefault(False)
+        settingsGroupLayout.addLayout(dpiLayout)
+        settingsGroupLayout.addLayout(trimLayout)
+        settingsGroupLayout.addLayout(icdScalingLayout)
+        settingsGroupLayout.addLayout(rulerLayout)
+        settingsGroupLayout.addLayout(outputNamingLayout)
+        settingsGroupLayout.addWidget(self.fooDefaultsButton)
+
+        settingsGroupBox.setLayout(settingsGroupLayout)
+
+        vlayout.addSpacing(10)
+        vlayout.addWidget(settingsGroupBox)
+
         self.convertButton = QtWidgets.QPushButton("Convert Images")
         self.convertButton.clicked.connect(self.processImageFiles)
         self.convertButton.setAutoDefault(False)
-        self.buttonPanel = TwoButtonPanel(self.saveDefaultsButton, self.convertButton)
+        # Button appearance is odd in QStackedLayout without adding to ButtonPanel
+        self.buttonPanel = ButtonPanel(self.convertButton)
 
         self.progressPanel = ProgressPanel(self)
 
-        self.stackedLayout = QtWidgets.QStackedLayout()        
+        self.stackedLayout = QtWidgets.QStackedLayout()
         self.stackedLayout.addWidget(self.buttonPanel)
         self.stackedLayout.addWidget(self.progressPanel)
         self.stackedLayout.setCurrentIndex(0)
+
         vlayout.addLayout(self.stackedLayout, stretch=0)
 
     def showProgressLayout(self, show):
@@ -137,6 +163,7 @@ class MainWindow(QtWidgets.QDialog):
         self.prefs.set("icdScaling", self.icdScaling.text())
         self.prefs.set("ruler", self.rulerCombo.currentText())
         self.prefs.set("outputNaming", self.outputNamingCombo.currentIndex())
+        infobox(self, "Saved Default Settings", f"Saved Default Settings.\n\nResolution: {self.dpi.text()} DPI\nTrim: {self.trim.text()} inches\nICD Scaling: {self.icdScaling.text()}%\nRuler: {self.rulerCombo.currentText()}\nOutput Naming: {self.outputNamingCombo.currentText()}")
 
     # override QWidget.closeEvent()
     def closeEvent(self, event):
