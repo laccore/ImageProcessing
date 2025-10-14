@@ -88,6 +88,7 @@ class MainWindow(QtWidgets.QDialog):
         settingsGroupLayout.addLayout(icdScalingLayout)
         settingsGroupLayout.addLayout(rulerLayout)
         settingsGroupLayout.addLayout(outputNamingLayout)
+        settingsGroupLayout.addSpacing(15)
         settingsGroupLayout.addWidget(self.fooDefaultsButton)
 
         settingsGroupBox.setLayout(settingsGroupLayout)
