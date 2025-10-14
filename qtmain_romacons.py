@@ -12,6 +12,10 @@ import romacons
 from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel, ButtonPanel
 from prefs import Preferences
 
+class UnmatchedFilenamesError(Exception):
+    def __init__(self, message):
+        super(UnmatchedFilenamesError, self).__init__(message)
+        self.message = message
 
 class MainWindow(QtWidgets.QDialog):
     def __init__(self, app):
@@ -172,6 +176,23 @@ class MainWindow(QtWidgets.QDialog):
     def getRulerPath(self):
         return os.path.join(self.app_path, "rulers", str(self.rulerCombo.currentText()))
 
+    # Strip rotation suffix (-rot[digit] or _rot[digit]) from image filenames.
+    # If all stripped names match, return as output filename. Otherwise, raise an error.
+    def getOutputFilename(self, imgFiles):
+        stripped_filenames = []
+        for f in imgFiles:
+            base = os.path.basename(f)
+            base, _ = os.path.splitext(base)
+
+            # remove rotation suffix from base name
+            base_no_suffix = re.sub(r'[-_]rot\d', '', base)
+            stripped_filenames.append(base_no_suffix)
+        if len(set(stripped_filenames)) != 1:
+            raise UnmatchedFilenamesError(f"Filenames: {stripped_filenames}")
+        else:
+            print(f"Good base filename: {stripped_filenames[0]}")
+        return stripped_filenames[0]
+
     def processImageFiles(self):
         imgFiles = self.imageList.getFiles()
         if len(imgFiles) == 0:
@@ -196,7 +217,8 @@ class MainWindow(QtWidgets.QDialog):
             if icdScaling <= 0:
                 errbox(self, "Invalid ICD Scaling", "ICD scaling % must be greater than zero.")
                 return
-            outputBaseName = "ROMACONS_out" # TODO
+
+            outputBaseName = self.getOutputFilename(imgFiles)
             romacons.prepare_romacons(imgFiles, self.getRulerPath(), dpi, trim, icdScaling, outputBaseName, self.app_path)
             success = True
         except common.RulerTooShortError as e:
@@ -205,6 +227,8 @@ class MainWindow(QtWidgets.QDialog):
             errbox(self, "Unexpected Color Depth", "{}".format(e.message))
         except ValueError: # raised by float()
             errbox(self, "Expected Numeric Input", "Invalid DPI, trim, or ICD Scaling value, all of which must be numeric.")
+        except UnmatchedFilenamesError as e:
+            errbox(self, "Unmatched Filenames", f"Base filenames (with '_rot#' removed) must match.\n{e.message}")
         except:
             err = sys.exc_info()
             errbox(self, "Process failed", "{}".format("Unhandled error {}: {}".format(err[0], err[1])))
@@ -213,7 +237,7 @@ class MainWindow(QtWidgets.QDialog):
             self.showProgressLayout(False)
             self.progressPanel.clear()
             if success:
-                infobox(self, "Yay!", "Successfully merged {} rotated image files.".format(len(imgFiles)))
+                infobox(self, "Yay!", f"Successfully merged {len(imgFiles)} rotated image files.\n\nSaved {outputBaseName} as TIFF, JPEG, and ICD JPEG.")
                 self.imageList.clear()
 
 
