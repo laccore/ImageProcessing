@@ -1,5 +1,5 @@
-# LacCore/CSDCO
-# geotek.py
+# CSD Facility
+# geotek_opencv.py
 #
 # Prepare a raw vertically-oriented Geotek core scanner TIFF image
 # for use by doing the following:
@@ -57,11 +57,11 @@ def load_ruler_image(rulerPath, colorDepth):
 
 # imgPath - full path to input Geotek image
 # rulerPath - full path to input ruler image - must be in RGB (see Note above)
-# trim - amount, in inches, to trim from core top
 # dpi - resolution of input image and ruler
+# trim - amount, in inches, to trim from core top
 # icdScaling - percentage to which ICD image should be scaled
 # outputBaseName - filename (without extension) to use for outputs - format-appropriate extension will be added
-# destDir - directory in which jpeg, tiff, and ICD dirs will be created,
+# destPath - directory in which jpeg, tiff, and ICD dirs will be created,
 # to which image outputs will be written
 def prepare_geotek(imgPath, rulerPath, dpi, trim, icdScaling, outputBaseName, destPath):
     baseProgStr = "Processing {}...".format(imgPath)
