@@ -82,7 +82,7 @@ class FileListPanel(QtWidgets.QWidget, DragAndDropMixin):
         self.sslist.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         vlayout.addWidget(self.sslist)
         arlayout = QtWidgets.QHBoxLayout()
-        self.addButton = QtWidgets.QPushButton("Add")
+        self.addButton = QtWidgets.QPushButton("Add...")
         self.addButton.clicked.connect(self.onAdd)
         self.rmButton = QtWidgets.QPushButton("Remove")
         self.rmButton.clicked.connect(self.onRemove)
