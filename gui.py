@@ -18,6 +18,10 @@ def promptbox(parent, title="Prompt", message=""):
     response = QtWidgets.QMessageBox.question(parent, title, message)
     return response == QtWidgets.QMessageBox.Yes
 
+def inputbox(parent, title="Get Input", message="[message]", default_text="[enter value]"):
+    text, confirmed = QtWidgets.QInputDialog.getText(parent, title, message, QtWidgets.QLineEdit.Normal, default_text)
+    return text, confirmed
+
 def chooseDirectory(parent, path=""):
     dlg = QtWidgets.QFileDialog(parent, "Choose directory", path)
     selectedDir = dlg.getExistingDirectory(parent)
