@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets, QtCore
 
 import common
 import romacons
-from gui import FileListPanel, errbox, infobox, ProgressPanel, TwoButtonPanel, ButtonPanel
+from gui import FileListPanel, errbox, infobox, inputbox, ProgressPanel, TwoButtonPanel, ButtonPanel
 from prefs import Preferences
 
 class UnmatchedFilenamesError(Exception):
@@ -177,7 +177,8 @@ class MainWindow(QtWidgets.QDialog):
         return os.path.join(self.app_path, "rulers", str(self.rulerCombo.currentText()))
 
     # Strip rotation suffix (-rot[digit] or _rot[digit]) from image filenames.
-    # If all stripped names match, return as output filename. Otherwise, raise an error.
+    # If all stripped names match, return as output filename.
+    # Otherwise, prompt user for output filename. If none is given, throw an error.
     def getOutputFilename(self, imgFiles):
         stripped_filenames = []
         for f in imgFiles:
@@ -188,7 +189,11 @@ class MainWindow(QtWidgets.QDialog):
             base_no_suffix = re.sub(r'[-_]rot\d', '', base)
             stripped_filenames.append(base_no_suffix)
         if len(set(stripped_filenames)) != 1:
-            raise UnmatchedFilenamesError(f"Filenames: {stripped_filenames}")
+            text, confirmed = inputbox(self, "Enter Filename", "Enter a name for the merged image file:", stripped_filenames[0])
+            if not confirmed or len(text) == 0:
+                raise UnmatchedFilenamesError(f"Filenames: {stripped_filenames}")
+            else:
+                return text
         else:
             print(f"Good base filename: {stripped_filenames[0]}")
         return stripped_filenames[0]
